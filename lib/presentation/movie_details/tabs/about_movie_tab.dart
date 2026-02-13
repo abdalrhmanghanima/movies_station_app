@@ -1,19 +1,44 @@
 import 'package:films_app/core/utils/app_colors.dart';
+import 'package:films_app/presentation/movie_details/cubit/movie_details_cubit.dart';
+import 'package:films_app/presentation/movie_details/cubit/movie_details_state.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AboutMovieTab extends StatelessWidget {
-  const AboutMovieTab({super.key});
+  final int movieId;
+
+  const AboutMovieTab({super.key, required this.movieId});
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      'From DC Comics comes the Suicide Squad, an antihero team of incarcerated supervillains who act as deniable assets for the United States government, undertaking high-risk black ops missions in exchange for commuted prison sentences.',
-      maxLines: 5,
-      style: TextStyle(
-        fontSize: 14,
-        color: AppColors.white,
-        fontWeight: FontWeight.w400,
-      ),
+    return BlocBuilder<MovieDetailsCubit, MovieDetailsState>(
+      builder: (context, state) {
+        if (state is MovieDetailsLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (state is MovieDetailsError) {
+          return Text(
+            state.message,
+            style: const TextStyle(color: Colors.white),
+          );
+        }
+
+        if (state is MovieDetailsLoaded) {
+          final movie = state.movieDetails;
+
+          return Text(
+            movie.overview ?? "No description available",
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.white,
+              fontWeight: FontWeight.w400,
+            ),
+          );
+        }
+
+        return const SizedBox();
+      },
     );
   }
 }

@@ -9,12 +9,22 @@ import 'package:flutter_svg/flutter_svg.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
+  static void changeTab(BuildContext context, int index) {
+    final state = context.findAncestorStateOfType<_HomeScreenState>();
+    state?._changeTab(index);
+  }
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  void _changeTab(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
 
   final List<Widget> _tabs = const [HomeTab(), SearchTab(), WatchListTab()];
 

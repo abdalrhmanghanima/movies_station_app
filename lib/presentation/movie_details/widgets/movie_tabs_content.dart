@@ -5,18 +5,23 @@ import '../tabs/about_movie_tab.dart';
 
 class MovieTabsContent extends StatelessWidget {
   final int currentTabIndex;
+  final int movieId;
 
-  const MovieTabsContent({super.key, required this.currentTabIndex});
+  const MovieTabsContent({
+    super.key,
+    required this.currentTabIndex,
+    required this.movieId,
+  });
 
   @override
   Widget build(BuildContext context) {
     switch (currentTabIndex) {
       case 0:
-        return const AboutMovieTab();
+        return AboutMovieTab(movieId: movieId);
       case 1:
-        return const ReviewsTab();
+        return ReviewsTab(movieId: movieId);
       case 2:
-        return const CastTab();
+        return CastTab(movieId: movieId);
       default:
         return const SizedBox();
     }

@@ -1,8 +1,13 @@
+import 'package:films_app/core/constants/app_const.dart';
 import 'package:films_app/core/routing/app_routes.dart';
+import 'package:films_app/core/shared/shimmer_widgets/home_tab_shimmer_widget.dart';
 import 'package:films_app/core/utils/app_colors.dart';
+import 'package:films_app/presentation/home/cubit/movies_cubit.dart';
+import 'package:films_app/presentation/home/cubit/movies_state.dart';
 import 'package:films_app/presentation/home/widgets/custom_tab_text.dart';
 import 'package:films_app/presentation/home/widgets/custom_text_field.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class HomeTab extends StatefulWidget {
   const HomeTab({super.key});
@@ -14,50 +19,20 @@ class HomeTab extends StatefulWidget {
 class _HomeTabState extends State<HomeTab> {
   int _currentTabIndex = 0;
 
-  final List<List<String>> tabImages = [
-    // Now Playing
-    [
-      'assets/images/movie-1.png',
-      'assets/images/movie-2.png',
-      'assets/images/movie-1.png',
-    ],
+  @override
+  void initState() {
+    super.initState();
+    context.read<MoviesCubit>().fetchHomeMovies();
+  }
 
-    // Upcoming
-    [
-      'assets/images/movie-2.png',
-      'assets/images/movie-2.png',
-      'assets/images/movie-1.png',
-    ],
-
-    // Top Rated
-    [
-      'assets/images/movie-1.png',
-      'assets/images/movie-1.png',
-      'assets/images/movie-2.png',
-    ],
-
-    // Popular
-    [
-      'assets/images/movie-2.png',
-      'assets/images/movie-1.png',
-      'assets/images/movie-2.png',
-    ],
-  ];
-
-  final List<String> images = [
-    'assets/images/movie-1.png',
-    'assets/images/movie-2.png',
-    'assets/images/movie-1.png',
-    'assets/images/movie-2.png',
-  ];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.primary,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
-        title: Padding(
-          padding: const EdgeInsets.only(left: 12),
+        title: const Padding(
+          padding: EdgeInsets.only(left: 12),
           child: Text(
             'What do you want to watch?',
             style: TextStyle(
@@ -68,129 +43,148 @@ class _HomeTabState extends State<HomeTab> {
           ),
         ),
       ),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(child: CustomTextField()),
-          const SliverToBoxAdapter(child: SizedBox(height: 12)),
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 220,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                itemCount: images.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: EdgeInsets.only(right: 30),
-                    child: GestureDetector(
-                      onTap: () => Navigator.pushNamed(context,AppRoutes.movieDetailsScreen),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Image.asset(
-                          images[index],
-                          height: 210,
-                          width: 144,
+      body: BlocBuilder<MoviesCubit, MoviesState>(
+        builder: (context, state) {
+          if (state is MoviesError) {
+            return Center(child: Text(state.message));
+          }
+
+          final isLoading = state is MoviesLoading;
+
+          final nowPlaying = state is MoviesLoaded ? state.nowPlaying : [];
+
+          final upcoming = state is MoviesLoaded ? state.upcoming : [];
+
+          final topRated = state is MoviesLoaded ? state.topRated : [];
+
+          final popular = state is MoviesLoaded ? state.popular : [];
+
+          final currentList = _currentTabIndex == 0
+              ? nowPlaying
+              : _currentTabIndex == 1
+              ? upcoming
+              : _currentTabIndex == 2
+              ? topRated
+              : popular;
+
+          return CustomScrollView(
+            slivers: [
+              const SliverToBoxAdapter(child: CustomTextField()),
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 220,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: isLoading ? 5 : topRated.length,
+                    itemBuilder: (context, index) {
+                      final movie = isLoading ? null : topRated[index];
+
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 16),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: isLoading
+                              ? const ShimmerBox(
+                                  width: 144,
+                                  height: 210,
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(16),
+                                  ),
+                                )
+                              : GestureDetector(
+                                  onTap: () => Navigator.pushNamed(
+                                    context,
+                                    AppRoutes.movieDetailsScreen,
+                                    arguments: movie,
+                                  ),
+                                  child: Image.network(
+                                    "${AppConstants.imageBaseUrl}${movie!.posterPath}",
+                                    width: 144,
+                                    height: 210,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
                         ),
-                      ),
-                    ),
-                  );
-                },
+                      );
+                    },
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 64)),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      setState(() => _currentTabIndex = 0);
-                    },
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: CustomTabText(
-                      text: 'Now playing',
-                      isSelected: _currentTabIndex == 0,
-                    ),
+              const SliverToBoxAdapter(child: SizedBox(height: 32)),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildTab("Now playing", 0),
+                      _buildTab("Upcoming", 1),
+                      _buildTab("Top rated", 2),
+                      _buildTab("Popular", 3),
+                    ],
                   ),
-                  TextButton(
-                    onPressed: () {
-                      setState(() => _currentTabIndex = 1);
-                    },
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: CustomTabText(
-                      text: 'Upcoming',
-                      isSelected: _currentTabIndex == 1,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      setState(() => _currentTabIndex = 2);
-                    },
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: CustomTabText(
-                      text: 'Top rated',
-                      isSelected: _currentTabIndex == 2,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      setState(() => _currentTabIndex = 3);
-                    },
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: CustomTabText(
-                      text: 'Popular',
-                      isSelected: _currentTabIndex == 3,
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
+              const SliverToBoxAdapter(child: SizedBox(height: 16)),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverGrid(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final movie = isLoading ? null : currentList[index];
 
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            sliver: SliverGrid(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final currentImages = tabImages[_currentTabIndex];
-
-                return GestureDetector(
-                  onTap: () => Navigator.pushNamed(context,AppRoutes.movieDetailsScreen),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(currentImages[index], fit: BoxFit.cover),
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: isLoading
+                          ? const ShimmerBox(
+                              width: double.infinity,
+                              height: double.infinity,
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                            )
+                          : GestureDetector(
+                              onTap: () => Navigator.pushNamed(
+                                context,
+                                AppRoutes.movieDetailsScreen,
+                                arguments: movie,
+                              ),
+                              child: Image.network(
+                                "${AppConstants.imageBaseUrl}${movie!.posterPath}",
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                    );
+                  }, childCount: isLoading ? 6 : currentList.length),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 0.65,
                   ),
-                );
-              }, childCount: tabImages[_currentTabIndex].length),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.65,
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
+    );
+  }
+
+  Widget _buildTab(String text, int index) {
+    return TextButton(
+      onPressed: () {
+        setState(() {
+          _currentTabIndex = index;
+        });
+      },
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.zero,
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: CustomTabText(text: text, isSelected: _currentTabIndex == index),
     );
   }
 }
