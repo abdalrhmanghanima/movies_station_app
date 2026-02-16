@@ -1,4 +1,4 @@
-# 🎬 Films App – Flutter Movie Application
+# 🎬 Movies Station App – Flutter Movie Application
 
 <p align="center">
   <img src="assets/images/popcorn.png" width="140"/>
@@ -6,7 +6,7 @@
 
 ## 📌 Overview
 
-**Films App** is a modern Flutter movie application built using Clean Architecture principles and powered by the TMDB API.
+**Movies Station App** is a modern Flutter movie application built using Clean Architecture principles and powered by the TMDB API.
 
 The application allows users to browse trending movies, explore top-rated films, search for specific titles, and manage a personal watchlist — all within a smooth, responsive, and web-supported experience.
 
@@ -173,7 +173,7 @@ Clone the repository:
 
 ```bash
 git clone https://github.com/abdalrhmanghanima/movies_station_app.git
-cd movies_station_app
+cd films_app
 ```
 
 Install dependencies:
